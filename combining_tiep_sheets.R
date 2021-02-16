@@ -1,9 +1,4 @@
-# Arjun Jain
-# Combining TIEP data 
-# January 5, 2020
 
-## Cleaning up and formatting data 
- 
 ### Loading files and required libraries 
 
 library(dplyr)
@@ -104,9 +99,18 @@ for(zipcode in TIEP_2019$ZIP) {
 }
 TIEP_2019$ZIP <- zipcodes
 
-  
+### Putting "-" in blank cells
+
+TIEP_2013[TIEP_2013 == ""] <- "-"
+TIEP_2014[TIEP_2014 == ""] <- "-"
+TIEP_2015[TIEP_2015 == ""] <- "-"
+TIEP_2016[TIEP_2016 == ""] <- "-"
+TIEP_2017[TIEP_2017 == ""] <- "-"
+TIEP_2018[TIEP_2018 == ""] <- "-"
+TIEP_2019[TIEP_2019 == ""] <- "-"
+
 #####################################################################################################################################
-## Adding unique identifier based on Address, City, and State
+## Adding unique identifier based on TCN and ZIP
 ## Checking for duplicates and making necessary changes 
 
 TIEP_2013 <- unite(TIEP_2013, unique_ID, c(TCN, ZIP), remove=FALSE)
@@ -124,28 +128,28 @@ is_unique <- length(unique(TIEP_2014$unique_ID)) == nrow(TIEP_2014)
 TIEP_2015 <- unite(TIEP_2015, unique_ID, c(TCN, ZIP), remove=FALSE)
 is_unique <- length(unique(TIEP_2015$unique_ID)) == nrow(TIEP_2015)
 duplicate <- TIEP_2015$unique_ID[duplicated(TIEP_2015$unique_ID)]
-TIEP_2015 <- TIEP_2015[!(TIEP_2015$unique_ID == '_NA'), ]
+### Removing records with all identifiable fields as blank or NA
+TIEP_2015 <- TIEP_2015[!(TIEP_2015$unique_ID == '-_NA'), ]
 is_unique <- length(unique(TIEP_2015$unique_ID)) == nrow(TIEP_2015)
 
 TIEP_2016 <- unite(TIEP_2016, unique_ID, c(TCN, ZIP), remove=FALSE)
 is_unique <- length(unique(TIEP_2016$unique_ID)) == nrow(TIEP_2016)
 duplicate <- TIEP_2016$unique_ID[duplicated(TIEP_2016$unique_ID)]
-TIEP_2016 <- TIEP_2016[!(TIEP_2016$unique_ID == '_NA'), ]
+TIEP_2016 <- TIEP_2016[!(TIEP_2016$unique_ID == '-_NA'), ]
 is_unique <- length(unique(TIEP_2016$unique_ID)) == nrow(TIEP_2016)
 
 TIEP_2017 <- unite(TIEP_2017, unique_ID, c(TCN, ZIP), remove=FALSE)
 is_unique <- length(unique(TIEP_2017$unique_ID)) == nrow(TIEP_2017)
 duplicate <- TIEP_2017$unique_ID[duplicated(TIEP_2017$unique_ID)]
-### Removing records with all identifiable fields as blank or NA
-TIEP_2017 <- TIEP_2017[!(TIEP_2017$unique_ID == '_NA'), ]
+TIEP_2017 <- TIEP_2017[!(TIEP_2017$unique_ID == '-_NA'), ]
 is_unique <- length(unique(TIEP_2017$unique_ID)) == nrow(TIEP_2017)
 
 TIEP_2018 <- unite(TIEP_2018, unique_ID, c(TCN, ZIP), remove=FALSE)
 is_unique <- length(unique(TIEP_2018$unique_ID)) == nrow(TIEP_2018)
 duplicate <- TIEP_2018$unique_ID[duplicated(TIEP_2018$unique_ID)]
-TIEP_2018 <- TIEP_2018[!(TIEP_2018$unique_ID == '_NA'), ]
+TIEP_2018 <- TIEP_2018[!(TIEP_2018$unique_ID == '-_NA'), ]
 ### Two identical records except the ACS_Ver field is blank in one record and - in another record
-TIEP_2018 <- TIEP_2018[!(TIEP_2018$TCN == 'Medical City Weatherford' & TIEP_2018$ACS_Ver == ""), ]
+TIEP_2018 <- TIEP_2018[-(1776), ]
 is_unique <- length(unique(TIEP_2018$unique_ID)) == nrow(TIEP_2018)
 
 TIEP_2019 <- unite(TIEP_2019, unique_ID, c(TCN, ZIP), remove=FALSE)
@@ -479,14 +483,11 @@ TIEP_2014[4, c(1:6)] <- TIEP_2016[4, c(1:6)]
 TIEP_2018 <- TIEP_2018[!(TIEP_2018$unique_ID == "Wilmington Hospital_NA"),]
 rownames(TIEP_2018) <- NULL
 
-
-
 #____________________________________________________________________________________________________________________________________--
 ## Matching the records across years
 
 ### Strategy: Match using TCN_zipcode unique_ID and then, for the matching records where the name is different across years, match based on Address, City, State, 
 ### and duplicate_ID  
-
 
 ### Create combined dataframe 
 
@@ -616,7 +617,6 @@ for (row in 1:nrow(TIEP_2019)) {
 
 #######################################################################################################################
 ## Checking matching 
-
 
 ### Mark those records that should have got matched up but did not
 ### These are records where some ACS designations are a number and others are blank (not "-" but blank) cells
@@ -1055,20 +1055,20 @@ TIEP_combined[2285, 36] <- "no"
 TIEP_combined[2297, 36] <- "no"
 TIEP_combined[2298, 36] <- "no"
 
+TIEP_combined[2514, c(8, 9, 15, 16, 22, 23, 30)] <- TIEP_combined[1047, c(8, 9, 15, 16, 22, 23, 30)]
+TIEP_combined <- TIEP_combined[!(TIEP_combined$unique_ID == "United Health Services - Wilson Medical Center_13790"),]
+rownames(TIEP_combined) <- NULL
+TIEP_combined[2513, 36] <- "no"
+
+### The rest are records to check because they exist only in those 2017, 2018, 2019 or because duplicates
+
 to_check <- TIEP_combined$ZIP[TIEP_combined$records_to_check == "yes"]
 to_check %in% TIEP_2013$ZIP
 to_check %in% TIEP_2014$ZIP
 to_check %in% TIEP_2015$ZIP
 to_check %in% TIEP_2016$ZIP
 
-TIEP_combined[2514, c(8, 9, 15, 16, 22, 23, 30)] <- TIEP_combined[1047, c(8, 9, 15, 16, 22, 23, 30)]
-TIEP_combined <- TIEP_combined[!(TIEP_combined$unique_ID == "United Health Services - Wilson Medical Center_13790"),]
-rownames(TIEP_combined) <- NULL
-TIEP_combined[2513, 36] <- "no"
-
 TIEP_combined$records_to_check <- NULL
-
-TIEP_combined$records_to_check <- ""
 
 ### Marking rows where ACS designation changes from level 1/2 to NA/3 or vice versa
 
@@ -1076,23 +1076,92 @@ TIEP_combined$ACS_des_change <- ""
 
 for (row in 1:nrow(TIEP_combined)) {
   if(("1" %in% TIEP_combined[row, 8:14] == TRUE & "-" %in% TIEP_combined[row, 8:14] == TRUE) | ("1" %in% TIEP_combined[row, 8:14] == TRUE & "3" %in% TIEP_combined[row, 8:14] == TRUE) | ("2" %in% TIEP_combined[row, 8:14] == TRUE & "-" %in% TIEP_combined[row, 8:14] == TRUE) | ("2" %in% TIEP_combined[row, 8:14] == TRUE & "3" %in% TIEP_combined[row, 8:14] == TRUE)) {
-    TIEP_combined[row, 36] <- "yes"
+    TIEP_combined[row, "ACS_des_change"] <- "yes"
   } else {
-    TIEP_combined[row, 36] <- "no"
+    TIEP_combined[row, "ACS_des_change"] <- "no"
   }
 }
 
+### Indicating whether hospital was in a sheet for a given year
 
-### Making columns numeric and deleting duplicate_ID column
+TIEP_combined$In_2013_Sheet <- ""
+TIEP_combined$In_2014_Sheet <- ""
+TIEP_combined$In_2015_Sheet <- ""
+TIEP_combined$In_2016_Sheet <- ""
+TIEP_combined$In_2017_Sheet <- ""
+TIEP_combined$In_2018_Sheet <- ""
+TIEP_combined$In_2019_Sheet <- ""
+
+for (row in 1:nrow(TIEP_combined)) {
+  if(TIEP_combined[row, "ACS_Ver_2013"] != "") {
+    TIEP_combined[row, "In_2013_Sheet"] <- "yes"
+  } else {
+    TIEP_combined[row, "In_2013_Sheet"] <- "no"
+  }
+}
+
+for (row in 1:nrow(TIEP_combined)) {
+  if(TIEP_combined[row, "ACS_Ver_2014"] != "") {
+    TIEP_combined[row, "In_2014_Sheet"] <- "yes"
+  } else {
+    TIEP_combined[row, "In_2014_Sheet"] <- "no"
+  }
+}
+
+for (row in 1:nrow(TIEP_combined)) {
+  if(TIEP_combined[row, "ACS_Ver_2015"] != "") {
+    TIEP_combined[row, "In_2015_Sheet"] <- "yes"
+  } else {
+    TIEP_combined[row, "In_2015_Sheet"] <- "no"
+  }
+}
+
+for (row in 1:nrow(TIEP_combined)) {
+  if(TIEP_combined[row, "ACS_Ver_2016"] != "") {
+    TIEP_combined[row, "In_2016_Sheet"] <- "yes"
+  } else {
+    TIEP_combined[row, "In_2016_Sheet"] <- "no"
+  }
+}
+
+for (row in 1:nrow(TIEP_combined)) {
+  if(TIEP_combined[row, "ACS_Ver_2017"] != "") {
+    TIEP_combined[row, "In_2017_Sheet"] <- "yes"
+  } else {
+    TIEP_combined[row, "In_2017_Sheet"] <- "no"
+  }
+}
+
+for (row in 1:nrow(TIEP_combined)) {
+  if(TIEP_combined[row, "ACS_Ver_2018"] != "") {
+    TIEP_combined[row, "In_2018_Sheet"] <- "yes"
+  } else {
+    TIEP_combined[row, "In_2018_Sheet"] <- "no"
+  }
+}
+
+for (row in 1:nrow(TIEP_combined)) {
+  if(TIEP_combined[row, "ACS_Ver_2019"] != "") {
+    TIEP_combined[row, "In_2019_Sheet"] <- "yes"
+  } else {
+    TIEP_combined[row, "In_2019_Sheet"] <- "no"
+  }
+}
+
+                                             
+### Change SouthEast Alaska Regional Health Consortium (SEARHC)/Mt. Edgecumbe Hospital_99508 City to Anchorage instead of Sitka
+
+TIEP_combined[10, "City_Town"] <- "Anchorage"
+
+### Making ZIP column numeric 
 
 TIEP_combined$ZIP <- as.numeric(TIEP_combined$ZIP)
-TIEP_combined <- TIEP_combined[-c(7)]
+
+### Remove duplicate_ID column
+
+TIEP_combined <- TIEP_combined[, -7]
 
 ### Creating Excel file from combined dataframe
 
 library(xlsx)
-write.xlsx(TIEP_combined, file = "~/Gap Year/Trauma Center Stanford Research Project/TIEP_Address_Data/TIEP_combined.xlsx", col.names = T, row.names = F, showNA = F)
-
-
-
-
+write.xlsx(TIEP_combined, file = "~/Gap Year/Trauma Center Stanford Research Project/TIEP_Address_Data/TIEP_combined_revised.xlsx", col.names = T, row.names = F, showNA = F)
